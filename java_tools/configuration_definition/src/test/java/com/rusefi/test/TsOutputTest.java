@@ -30,6 +30,26 @@ class TsOutputTest {
         String expectedFahrenheit = "\"F\",{ 9 / 5 },17.77777,-40.0,392.0, 0";
         assertEquals(expectedFahrenheit, tsOutput.formatTemperatureTsInfo(temperatureInput, true));
     }
+
+    @Test
+    void testFormatPressureTsInfo() {
+        TsOutput tsOutput = new TsOutput(false);
+
+        // Test null or empty input
+        assertEquals("", tsOutput.formatPressureTsInfo(null, false));
+        assertEquals("", tsOutput.formatPressureTsInfo("", false));
+        assertEquals("", tsOutput.formatPressureTsInfo("  ", false));
+
+        String pressureInput = "\"SPECIAL_CASE_PRESSURE\", 1, 0, 15, 250, 0";
+
+        // Test kPa format
+        String expectedKPa = "\"kPa\", 1, 0, 15, 250, 0";
+        assertEquals(expectedKPa, tsOutput.formatPressureTsInfo(pressureInput, false));
+
+        // Test psi format
+        String expectedPsi = "\"psi\",0.145038,0,2.17557,36.2595, 0";
+        assertEquals(expectedPsi, tsOutput.formatPressureTsInfo(pressureInput, true));
+    }
     
 
     @Test
