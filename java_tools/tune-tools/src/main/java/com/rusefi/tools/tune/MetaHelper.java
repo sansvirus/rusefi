@@ -24,9 +24,8 @@ public class MetaHelper {
 
     @NotNull
     static ReaderStateImpl getReaderState(String boardPath) throws IOException {
-        String absolutePath = new File(RootHolder.ROOT).getAbsolutePath();
-        List<String> options = Files.readAllLines(Paths.get(absolutePath + "/../" + ConfigDefinition.CONFIG_PATH));
-        List<String> boardOptions = Files.readAllLines(Paths.get(boardPath + "board_config.txt"));
+        List<String> options = FileLinesHelper.readAllLinesWithRoot("/../" + ConfigDefinition.CONFIG_PATH);
+        List<String> boardOptions = FileLinesHelper.readAllLines2(boardPath + "board_config.txt");
 
         options.add(ConfigDefinition.KEY_PREPEND);
         options.add("integration/rusefi_config_shared.txt");

@@ -648,7 +648,7 @@ float cylinderBore;@@CYLINDER_BORE_TOOLTIP@@;@@CYLINDER_BORE_UNITS@@, @@CYLINDER
 
 
 custom engine_load_mode_e 1 bits, U08, @OFFSET@, [0:2], @@engine_load_mode_e_enum@@
-engine_load_mode_e fuelAlgorithm;This setting controls which fuel quantity control algorithm is used.\nAlpha-N means drive by TPS commonly only used for NA engines\nSpeed Density requires MAP sensor and is the default choice for may installs\nMAF air charge is a cylinder filling based method that uses a mass air flow sensor.;
+engine_load_mode_e fuelAlgorithm;Determines the method used for calculating fuel delivery. The following options are available:\nUses intake manifold pressure (MAP) and intake air temperature (IAT) to calculate air density and fuel requirements. This is a common strategy, especially for naturally aspirated or turbocharged engines.\nAlpha-N: Uses throttle position as the primary load input for fuel calculation. This strategy is generally used in engines with individual throttle bodies or those that lack a reliable MAP signal.\nMAF Air Charge: Relies on a Mass Air Flow (MAF) sensor to measure the amount of air entering the engine directly, making it effective for engines equipped with a MAF sensor.\nLua: Allows for custom fuel calculations using Lua scripting, enabling highly specific tuning applications where the other strategies don't apply.;
 uint8_t ALSMaxTPS;;"%", 1, 0, 0, 10, 0
 
 custom injection_mode_e 1 bits, U08, @OFFSET@, [0:1], "Simultaneous", "Sequential", "Batch", "Single Point"
@@ -1108,7 +1108,7 @@ end_struct
 	bit invertPrimaryTriggerSignal,"Falling","Rising";https://wiki.rusefi.com/Trigger-Configuration-Guide\nThis setting flips the signal from the primary engine speed sensor.
 	bit invertSecondaryTriggerSignal,"Falling","Rising";https://wiki.rusefi.com/Trigger-Configuration-Guide\nThis setting flips the signal from the secondary engine speed sensor.
 
-bit cutFuelOnHardLimit,"yes","no"
+bit cutFuelOnHardLimit,"yes","no";When enabled, this option cuts the fuel supply when the RPM limit is reached. Cutting fuel provides a smoother limiting action; however, it may lead to slightly higher combustion chamber temperatures since unburned fuel is not present to cool the combustion process.
 bit cutSparkOnHardLimit,"yes","no";Be careful enabling this: some engines are known to self-disassemble their valvetrain with a spark cut. Fuel cut is much safer.
 bit launchFuelCutEnable
 bit launchSparkCutEnable;This is the Cut Mode normally used
@@ -1321,7 +1321,7 @@ int16_t tps2Max;Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\
 	output_pin_e hpfpValvePin;
 	pin_output_mode_e hpfpValvePinMode;
 
-	float boostCutPressure;MAP value above which fuel is cut in case of overboost.\nSet to 0 to disable overboost cut.;"SPECIAL_CASE_PRESSURE", 1, 0, 0, @@MAP_UPPER_LIMIT@@, 0
+	float boostCutPressure;Specifies the boost pressure allowed before triggering a cut. Setting this to 0 will DISABLE overboost cut.;"SPECIAL_CASE_PRESSURE", 1, 0, 0, @@MAP_UPPER_LIMIT@@, 0
 
 	uint8_t[16] autoscale tchargeBins;;"kg/h", 5, 0, 0, 1200, 0
 	uint8_t[16] autoscale tchargeValues;;"ratio", 0.01, 0, 0, 1, 2
@@ -1623,7 +1623,7 @@ pin_input_mode_e[LUA_DIGITAL_INPUT_COUNT iterate] luaDigitalInputPinModes;
 	uint8_t autoscale rpmSoftLimitWindowSize;Window that the correction will be added throughout (example, if rpm limit is 7000, and rpmSoftLimitWindowSize is 200, the corrections activate at 6800RPM, creating a 200rpm window);"RPM", 10, 0, 0, 2500, 0
 	uint8_t autoscale rpmSoftLimitTimingRetard;Degrees of timing REMOVED from actual timing during soft RPM limit window;"deg", 0.2, 0, 0, 50, 1
 	uint8_t autoscale rpmSoftLimitFuelAdded;% of fuel ADDED during window;"%", 0.2, 0, 0, 50, 1
-	uint8_t autoscale rpmHardLimitHyst;Hysterisis: if the hard limit is 7200rpm and rpmHardLimitHyst is 200rpm, then when the ECU sees 7200rpm, fuel/ign will cut, and stay cut until 7000rpm (7200-200) is reached;"RPM", 10, 0, 0, 2500, 0
+	uint8_t autoscale rpmHardLimitHyst;Sets a buffer below the RPM hard limit, helping avoid rapid cycling of cut actions by defining a range within which RPM must drop before cut actions are re-enabled.\nHysterisis: if the hard limit is 7200rpm and rpmHardLimitHyst is 200rpm, then when the ECU sees 7200rpm, fuel/ign will cut, and stay cut until 7000rpm (7200-200) is reached;"RPM", 10, 0, 0, 2500, 0
 	uint16_t autoscale benchTestOffTime;Time between bench test pulses;"ms", 0.1, 0, 5, 2000, 1
 	uint8_t autoscale boostCutPressureHyst;Hysterisis: if hard cut is 240kpa, and boostCutPressureHyst is 20, when the ECU sees 240kpa, fuel/ign will cut, and stay cut until 240-20=220kpa is reached;"kPa (absolute)", 0.5, 0, 0, 125, 1
 	int8_t[TCU_GEAR_COUNT] autoscale gearBasedOpenLoopBoostAdder;Boost duty cycle modified by gear;"%", 0.5, 0, -63, 63, 1
@@ -1663,8 +1663,8 @@ float ignKeyAdcDivider
 
 int8_t[TRACTION_CONTROL_ETB_DROP_SLIP_SIZE x TRACTION_CONTROL_ETB_DROP_SPEED_SIZE] tractionControlEtbDrop;;"%", 1, 0, -100, 0, 0
 
-	uint8_t maxInjectorDutyInstant;If injector duty cycle hits this value, instantly cut fuel.;"%", 1, 0, 50, 200, 0
-	uint8_t maxInjectorDutySustained;If injector duty cycle hits this value for the specified delay time, cut fuel.;"%", 1, 0, 50, 120, 0
+	uint8_t maxInjectorDutyInstant;This sets an immediate limit on injector duty cycle. If this threshold is reached, the system will immediately cut the injectors.;"%", 1, 0, 50, 200, 0
+	uint8_t maxInjectorDutySustained;This limit allows injectors to operate up to the specified duty cycle percentage for a short period (as defined by the delay). After this delay, if the duty cycle remains above the limit, it will trigger a cut. ;"%", 1, 0, 50, 120, 0
 	uint8_t autoscale maxInjectorDutySustainedTimeout;Timeout period for duty cycle over the sustained limit to trigger duty cycle protection.;"sec", 0.1, 0, 0, 5, 1
 
 	output_pin_e[MAX_CYLINDER_COUNT iterate] injectionPinsStage2;
